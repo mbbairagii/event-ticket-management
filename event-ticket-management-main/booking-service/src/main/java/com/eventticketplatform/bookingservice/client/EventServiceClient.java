@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
+
 /**
  * Feign client for calling the Event Service.
  * The name "event-service" must match spring.application.name in that service.
@@ -16,6 +18,9 @@ public interface EventServiceClient {
 
     @GetMapping("/api/events/{id}")
     EventDto getEventById(@PathVariable("id") Long id);
+
+    @GetMapping("/api/events/organizer/{organizerId}/ids")
+    List<Long> getEventIdsByOrganizer(@PathVariable("organizerId") Long organizerId);
 
     @PutMapping("/api/events/{id}/seats")
     EventDto updateSeats(@PathVariable("id") Long id, @RequestParam("seatsChange") int seatsChange);

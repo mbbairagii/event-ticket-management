@@ -33,6 +33,14 @@ public class EventService {
         return toDto(findEventOrThrow(id));
     }
 
+    /**
+     * Internal endpoint: called by Booking Service via Feign to find which
+     * events belong to a given organizer, so it can look up their bookings.
+     */
+    public java.util.List<Long> getEventIdsByOrganizer(Long organizerId) {
+        return eventRepository.findIdsByOrganizerId(organizerId);
+    }
+
     public EventDto createEvent(EventDto dto) {
         Event event = toEntity(dto);
         event.setAvailableSeats(dto.getTotalSeats());

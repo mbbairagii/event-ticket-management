@@ -30,49 +30,48 @@ function Dashboard() {
     }, [user, navigate]);
 
     const fetchData = async () => {
-        try {
-            if (user.role === 'ADMIN') {
-                const [
-                    eventsResponse,
-                    bookingsResponse
-                ] = await Promise.all([
-                    getEvents({size: 100}),
-                    getAllBookings()
-                ]);
+        const eventsCall =
+            user.role === 'ADMIN'
+                ? getEvents({size: 100})
+                : getEvents({
+                    organizerId: user.id,
+                    size: 100
+                });
 
-                setEvents(
-                    eventsResponse.data.content ||
-                    eventsResponse.data ||
-                    []
-                );
+        const bookingsCall =
+            user.role === 'ADMIN'
+                ? getAllBookings()
+                : getOrganizerBookings(user.id);
 
-                setBookings(bookingsResponse.data || []);
-            }
+        // Use allSettled instead of all: a failure fetching bookings
+        // should not prevent events (or vice versa) from being shown.
+        const [eventsResult, bookingsResult] =
+            await Promise.allSettled([
+                eventsCall,
+                bookingsCall
+            ]);
 
-            if (user.role === 'ORGANIZER') {
-                const [
-                    eventsResponse,
-                    bookingsResponse
-                ] = await Promise.all([
-                    getEvents({
-                        organizerId: user.id,
-                        size: 100
-                    }),
-                    getOrganizerBookings(user.id)
-                ]);
-
-                setEvents(
-                    eventsResponse.data.content ||
-                    eventsResponse.data ||
-                    []
-                );
-
-                setBookings(bookingsResponse.data || []);
-            }
-        } catch (error) {
+        if (eventsResult.status === 'fulfilled') {
+            const eventsResponse = eventsResult.value;
+            setEvents(
+                eventsResponse.data.content ||
+                eventsResponse.data ||
+                []
+            );
+        } else {
             console.error(
-                'Error fetching dashboard data',
-                error
+                'Error fetching events',
+                eventsResult.reason
+            );
+        }
+
+        if (bookingsResult.status === 'fulfilled') {
+            const bookingsResponse = bookingsResult.value;
+            setBookings(bookingsResponse.data || []);
+        } else {
+            console.error(
+                'Error fetching bookings',
+                bookingsResult.reason
             );
         }
     };

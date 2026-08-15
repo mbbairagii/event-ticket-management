@@ -19,4 +19,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                               @Param("category") String category,
                               @Param("organizerId") Long organizerId,
                               Pageable pageable);
+
+    @Query("SELECT e.id FROM Event e WHERE e.organizerId = :organizerId")
+    java.util.List<Long> findIdsByOrganizerId(@Param("organizerId") Long organizerId);
 }

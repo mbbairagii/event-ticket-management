@@ -32,6 +32,15 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventById(id));
     }
 
+    /**
+     * Internal endpoint: called by Booking Service via Feign to find which
+     * event IDs belong to a given organizer.
+     */
+    @GetMapping("/organizer/{organizerId}/ids")
+    public ResponseEntity<java.util.List<Long>> getEventIdsByOrganizer(@PathVariable Long organizerId) {
+        return ResponseEntity.ok(eventService.getEventIdsByOrganizer(organizerId));
+    }
+
     @PostMapping
     public ResponseEntity<EventDto> createEvent(@Valid @RequestBody EventDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(eventService.createEvent(dto));

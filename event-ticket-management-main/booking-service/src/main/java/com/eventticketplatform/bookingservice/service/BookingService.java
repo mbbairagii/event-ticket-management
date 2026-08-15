@@ -36,7 +36,7 @@ public class BookingService {
         if (event.getAvailableSeats() < dto.getQuantity()) {
             throw new IllegalArgumentException(
                     "Not enough seats. Requested: " + dto.getQuantity()
-                    + ", Available: " + event.getAvailableSeats());
+                            + ", Available: " + event.getAvailableSeats());
         }
 
         // Deduct seats in event-service
@@ -57,6 +57,19 @@ public class BookingService {
 
     public List<BookingResponseDto> getBookingsByUser(Long userId) {
         return bookingRepository.findByUserId(userId).stream()
+                .map(b -> {
+                    EventDto event = eventServiceClient.getEventById(b.getEventId());
+                    return toResponseDto(b, event);
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<BookingResponseDto> getBookingsByOrganizer(Long organizerId) {
+        List<Long> eventIds = eventServiceClient.getEventIdsByOrganizer(organizerId);
+        if (eventIds.isEmpty()) {
+            return List.of();
+        }
+        return bookingRepository.findByEventIdIn(eventIds).stream()
                 .map(b -> {
                     EventDto event = eventServiceClient.getEventById(b.getEventId());
                     return toResponseDto(b, event);

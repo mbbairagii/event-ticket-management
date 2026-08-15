@@ -28,6 +28,11 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.getBookingsByUser(userId));
     }
 
+    @GetMapping("/organizer/{organizerId}")
+    public ResponseEntity<List<BookingResponseDto>> getBookingsByOrganizer(@PathVariable Long organizerId) {
+        return ResponseEntity.ok(bookingService.getBookingsByOrganizer(organizerId));
+    }
+
     @GetMapping
     public ResponseEntity<List<BookingResponseDto>> getAllBookings() {
         return ResponseEntity.ok(bookingService.getAllBookings());

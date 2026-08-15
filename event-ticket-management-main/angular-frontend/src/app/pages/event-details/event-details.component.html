@@ -1,0 +1,102 @@
+<div *ngIf="loading" style="text-align: center; margin-top: 4rem;">Loading...</div>
+
+<div *ngIf="!loading && !event" style="text-align: center; margin-top: 4rem; color: #ff6b6b;">{{ error }}</div>
+
+<div *ngIf="event" style="max-width: 800px; margin: 0 auto;">
+  <div *ngIf="error && !loading" class="error-message" style="color: #ff6b6b; margin-bottom: 2rem;">{{ error }}</div>
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <!-- Apply assets path logic for background image -->
+    <div class="event-details-hero" [style.backgroundImage]="'url(' + (event.imageUrl ? (event.imageUrl.startsWith('/images') ? '/assets' + event.imageUrl : event.imageUrl) : '/assets/images/event_music_festival.jpg') + ')'">
+      <div class="event-details-hero-overlay">
+        <span style="background: var(--accent-primary); color: white; padding: 0.4rem 1rem; border-radius: 2rem; font-size: 1rem; margin-bottom: 1rem; display: inline-block;">
+          {{ event.category }}
+        </span>
+        <h2 style="font-size: 3rem; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">{{ event.name }}</h2>
+      </div>
+    </div>
+
+    <div style="padding: 2.5rem;">
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 3rem;">
+        
+        <div>
+          <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">About this Event</h3>
+          <p class="text-secondary" style="font-size: 1.1rem; line-height: 1.8;">
+            {{ event.description }}
+          </p>
+        </div>
+
+        <div class="card">
+          <div style="font-size: 2rem; font-weight: bold; color: var(--accent-secondary); margin-bottom: 1.5rem;">
+            ₹{{ event.price | number:'1.2-2' }}
+          </div>
+          <h3 style="margin-bottom: 1.5rem; font-size: 1.2rem;">Event Details</h3>
+          
+          <div style="display: flex; flex-direction: column; gap: 1.5rem; color: var(--text-secondary);">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <div style="font-size: 1.5rem;">📅</div>
+              <div>
+                <div style="font-weight: bold; color: var(--text-primary);">Date</div>
+                <div>{{ event.eventDate }}</div>
+              </div>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <div style="font-size: 1.5rem;">📍</div>
+              <div>
+                <div style="font-weight: bold; color: var(--text-primary);">Location</div>
+                <div>{{ event.venue }}</div>
+                <div>{{ event.city }}</div>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <div style="font-size: 1.5rem;">🎟️</div>
+              <div>
+                <div style="font-weight: bold; color: var(--text-primary);">Availability</div>
+                <div [style.color]="event.availableSeats > 0 ? 'var(--accent-secondary)' : '#ef4444'">
+                  {{ event.availableSeats }} / {{ event.totalSeats }} seats
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr style="border-color: rgba(255,255,255,0.1); margin: 2rem 0;" />
+
+          <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Tickets</label>
+            <input 
+              type="number" 
+              min="1" 
+              [max]="event.availableSeats"
+              [(ngModel)]="quantity"
+              class="form-input"
+              style="width: 100%; font-size: 1.1rem;"
+            />
+          </div>
+
+          <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem; font-size: 1.2rem; font-weight: bold;">
+            <span>Total</span>
+            <span>₹{{ (event.price * quantity) | number:'1.2-2' }}</span>
+          </div>
+
+          <button 
+            class="btn btn-primary" 
+            style="width: 100%; padding: 1rem; font-size: 1.1rem;"
+            (click)="handleBook()"
+            [disabled]="event.availableSeats === 0 || quantity < 1 || quantity > event.availableSeats"
+          >
+            {{ event.availableSeats === 0 ? 'Sold Out' : 'Book Now' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <app-payment-modal 
+    [isOpen]="isPaymentOpen" 
+    (close)="isPaymentOpen = false" 
+    [amount]="event.price * quantity" 
+    (success)="processBookingBackend()" 
+  ></app-payment-modal>
+</div>

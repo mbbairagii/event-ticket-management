@@ -1,0 +1,41 @@
+<div *ngIf="loading" style="text-align: center; margin-top: 4rem;">Loading...</div>
+
+<div *ngIf="!loading">
+  <h2 style="margin-bottom: 2rem;">My Bookings</h2>
+
+  <div *ngIf="bookings.length === 0" class="card" style="text-align: center; padding: 4rem;">
+    <p class="text-secondary" style="margin-bottom: 1.5rem; font-size: 1.1rem;">You haven't booked any tickets yet.</p>
+    <a routerLink="/events" class="btn btn-primary">Browse Events</a>
+  </div>
+
+  <div *ngIf="bookings.length > 0" style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <div *ngFor="let booking of bookings" class="card" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h3 style="margin-bottom: 0.5rem;">{{ booking.event.name }}</h3>
+        <div style="display: flex; gap: 1.5rem; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">
+          <span>📅 {{ booking.event.eventDate }}</span>
+          <span>📍 {{ booking.event.venue }}</span>
+        </div>
+        <div style="display: flex; gap: 1.5rem; font-size: 0.95rem;">
+          <span>Tickets: <strong>{{ booking.quantity }}</strong></span>
+          <span>Total: <strong>₹{{ booking.totalAmount | number:'1.2-2' }}</strong></span>
+          <span>Status: 
+            <strong [style.color]="booking.status === 'CONFIRMED' ? '#2ed573' : '#ff4757'" style="margin-left: 0.5rem;">
+              {{ booking.status }}
+            </strong>
+          </span>
+        </div>
+      </div>
+      
+      <div>
+        <button *ngIf="booking.status === 'CONFIRMED'"
+          class="btn" 
+          (click)="handleCancel(booking.id)"
+          style="background: rgba(255, 107, 107, 0.1); color: #ff6b6b;"
+        >
+          Cancel Booking
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

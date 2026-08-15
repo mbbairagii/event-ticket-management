@@ -1,0 +1,21 @@
+<div class="card" style="max-width: 400px; margin: 4rem auto;">
+  <h2>Register</h2>
+  <div *ngIf="error" style="color: #ff6b6b; margin-bottom: 1rem;">{{ error }}</div>
+  
+  <form (ngSubmit)="handleSubmit()" style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <input class="colorful-input" type="text" name="name" placeholder="Name" [(ngModel)]="formData.name" required />
+    <input class="colorful-input" type="email" name="email" placeholder="Email" [(ngModel)]="formData.email" required />
+    <input class="colorful-input" type="password" name="password" placeholder="Password" [(ngModel)]="formData.password" required />
+    
+    <select class="colorful-input" name="role" [(ngModel)]="formData.role" required style="background: var(--surface-glass); color: var(--text-primary)">
+      <option value="USER" style="color: black">I want to buy tickets (User)</option>
+      <option value="ORGANIZER" style="color: black">I want to host events (Organizer)</option>
+    </select>
+    
+    <button type="submit" class="btn btn-primary">Register</button>
+  </form>
+  
+  <p style="margin-top: 1rem; text-align: center;">
+    Already have an account? <a routerLink="/login" style="color: var(--accent-primary)">Login here</a>
+  </p>
+</div>

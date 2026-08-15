@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2001/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="ticket-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B6B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF8E53;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Main ticket body -->
+  <path d="M 15 30 L 85 30 C 85 40 95 40 95 50 C 95 60 85 60 85 70 L 15 70 C 15 60 5 60 5 50 C 5 40 15 40 15 30 Z" fill="url(#ticket-grad)" />
+  <!-- Dotted tear line -->
+  <line x1="70" y1="32" x2="70" y2="68" stroke="white" stroke-width="4" stroke-dasharray="4,4" />
+  <!-- Star icon -->
+  <path d="M 42 38 L 45 45 L 52 45 L 46 50 L 48 57 L 42 53 L 36 57 L 38 50 L 32 45 L 39 45 Z" fill="white" />
+</svg>

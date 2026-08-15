@@ -1,0 +1,77 @@
+<div *ngIf="user && (user.role === 'ADMIN' || user.role === 'ORGANIZER')">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h2>{{ user.role === 'ADMIN' ? 'Admin Dashboard' : 'Organizer Dashboard' }}</h2>
+    <a routerLink="/dashboard/event/new" class="btn btn-primary">Create New Event</a>
+  </div>
+
+  <div style="margin-bottom: 2rem; display: flex; gap: 1rem;">
+    <button 
+      class="btn" [ngClass]="activeTab === 'events' ? 'btn-primary' : 'btn-secondary'"
+      (click)="setActiveTab('events')"
+    >Manage Events</button>
+    
+    <button 
+      class="btn" [ngClass]="activeTab === 'bookings' ? 'btn-primary' : 'btn-secondary'"
+      (click)="setActiveTab('bookings')"
+    >{{ user.role === 'ADMIN' ? 'All Bookings' : 'My Event Bookings' }}</button>
+  </div>
+
+  <div *ngIf="activeTab === 'events'" class="card" style="padding: 0; overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+      <thead>
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+          <th style="padding: 1rem;">Event Name</th>
+          <th style="padding: 1rem;">Date</th>
+          <th style="padding: 1rem;">Available / Total</th>
+          <th style="padding: 1rem;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let event of events" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+          <td style="padding: 1rem;">{{ event.name }}</td>
+          <td style="padding: 1rem;">{{ event.eventDate }}</td>
+          <td style="padding: 1rem;">{{ event.availableSeats }} / {{ event.totalSeats }}</td>
+          <td style="padding: 1rem; display: flex; gap: 0.5rem;">
+            <a [routerLink]="['/dashboard/event/edit', event.id]" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.9rem;">Edit</a>
+            <button (click)="handleDelete(event.id)" class="btn" style="background: #ff6b6b; color: white; padding: 0.3rem 0.6rem; font-size: 0.9rem;">Delete</button>
+          </td>
+        </tr>
+        <tr *ngIf="events.length === 0">
+          <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-secondary);">No events found</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="activeTab === 'bookings'" class="card" style="padding: 0; overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+      <thead>
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+          <th style="padding: 1rem;">ID</th>
+          <th style="padding: 1rem;">User</th>
+          <th style="padding: 1rem;">Event</th>
+          <th style="padding: 1rem;">Quantity</th>
+          <th style="padding: 1rem;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let booking of bookings" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+          <td style="padding: 1rem;">#{{ booking.id }}</td>
+          <td style="padding: 1rem;">{{ booking.user?.name }} ({{ booking.user?.email }})</td>
+          <td style="padding: 1rem;">{{ booking.event?.name }}</td>
+          <td style="padding: 1rem;">{{ booking.quantity }}</td>
+          <td style="padding: 1rem;">
+            <span style="padding: 0.3rem 0.6rem; border-radius: 1rem; font-size: 0.8rem;"
+                  [style.background]="booking.status === 'CONFIRMED' ? 'rgba(46, 213, 115, 0.2)' : 'rgba(255, 71, 87, 0.2)'"
+                  [style.color]="booking.status === 'CONFIRMED' ? '#2ed573' : '#ff4757'">
+              {{ booking.status }}
+            </span>
+          </td>
+        </tr>
+        <tr *ngIf="bookings.length === 0">
+          <td colspan="5" style="padding: 2rem; text-align: center; color: var(--text-secondary);">No bookings found</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

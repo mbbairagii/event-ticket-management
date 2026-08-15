@@ -1,0 +1,14 @@
+<div class="card" style="max-width: 400px; margin: 4rem auto;">
+  <h2>Login</h2>
+  <div *ngIf="error" style="color: #ff6b6b; margin-bottom: 1rem;">{{ error }}</div>
+  
+  <form (ngSubmit)="handleSubmit()" style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <input class="colorful-input" type="email" name="email" placeholder="Email" [(ngModel)]="formData.email" required />
+    <input class="colorful-input" type="password" name="password" placeholder="Password" [(ngModel)]="formData.password" required />
+    <button type="submit" class="btn btn-primary">Login</button>
+  </form>
+  
+  <p style="margin-top: 1rem; text-align: center;">
+    Don't have an account? <a routerLink="/register" style="color: var(--accent-primary)">Register here</a>
+  </p>
+</div>

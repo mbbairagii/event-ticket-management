@@ -1,0 +1,61 @@
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+  <h2>{{ id ? 'Edit Event' : 'Create New Event' }}</h2>
+  <div *ngIf="error" style="color: #ff6b6b; margin-bottom: 1rem;">{{ error }}</div>
+  
+  <form (ngSubmit)="handleSubmit()" style="display: flex; flex-direction: column; gap: 1rem;">
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Event Name</label>
+        <input class="form-input" type="text" name="name" [(ngModel)]="formData.name" required />
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Category</label>
+        <input class="form-input" type="text" name="category" [(ngModel)]="formData.category" required />
+      </div>
+    </div>
+
+    <div>
+      <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Description</label>
+      <textarea class="form-input" name="description" [(ngModel)]="formData.description" rows="3" required></textarea>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Venue</label>
+        <input class="form-input" type="text" name="venue" [(ngModel)]="formData.venue" required />
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">City</label>
+        <input class="form-input" type="text" name="city" [(ngModel)]="formData.city" required />
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Event Date</label>
+        <input class="form-input" type="date" name="eventDate" [(ngModel)]="formData.eventDate" required />
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Price (₹)</label>
+        <input class="form-input" type="number" step="0.01" min="0" name="price" [(ngModel)]="formData.price" required />
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Total Seats</label>
+        <input class="form-input" type="number" min="1" name="totalSeats" [(ngModel)]="formData.totalSeats" (ngModelChange)="handleTotalSeatsChange()" required />
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Available Seats</label>
+        <input class="form-input" type="number" min="0" name="availableSeats" [(ngModel)]="formData.availableSeats" required />
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+      <button type="submit" class="btn btn-primary" style="flex: 1;">{{ id ? 'Update Event' : 'Create Event' }}</button>
+    </div>
+  </form>
+</div>

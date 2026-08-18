@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 // Components
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import JazzAmbiencePlayer from './components/JazzAmbiencePlayer';
 
 // Pages
 import Home from './pages/Home';
@@ -42,6 +43,12 @@ export default function App() {
           <Navbar 
             isAudioPlaying={isAudioPlaying} 
             setIsAudioPlaying={setIsAudioPlaying} 
+          />
+
+          {/* Background Atmospheric Jazz Player */}
+          <JazzAmbiencePlayer 
+            isPlaying={isAudioPlaying} 
+            setIsPlaying={setIsAudioPlaying} 
           />
 
           {/* Main Routing View */}

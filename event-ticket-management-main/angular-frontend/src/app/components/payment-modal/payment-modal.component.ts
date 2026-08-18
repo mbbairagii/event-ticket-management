@@ -14,6 +14,7 @@ declare var window: any; // Allow using window.Razorpay
 export class PaymentModalComponent implements OnChanges {
   @Input() isOpen: boolean = false;
   @Input() amount: number = 0;
+  @Input() userId: number | null = null;
   @Output() close = new EventEmitter<void>();
   @Output() success = new EventEmitter<void>();
 
@@ -47,7 +48,7 @@ export class PaymentModalComponent implements OnChanges {
     this.step = 'processing';
     this.error = '';
 
-    this.apiService.createRazorpayOrder({ amount: this.amount }).subscribe({
+    this.apiService.createRazorpayOrder({ userId: this.userId, amount: this.amount }).subscribe({
       next: (orderData) => {
         const options = {
           key: orderData.keyId,
@@ -57,10 +58,23 @@ export class PaymentModalComponent implements OnChanges {
           description: "Event Ticket Booking",
           order_id: orderData.orderId,
           handler: (response: any) => {
-            this.step = 'success';
-            setTimeout(() => {
-              this.success.emit();
-            }, 1500);
+            // Verify the signature server-side before trusting the payment.
+            this.apiService.verifyRazorpayPayment({
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature
+            }).subscribe({
+              next: () => {
+                this.step = 'success';
+                setTimeout(() => {
+                  this.success.emit();
+                }, 1500);
+              },
+              error: () => {
+                this.step = 'input';
+                this.error = 'Payment verification failed. Please contact support if money was deducted.';
+              }
+            });
           },
           prefill: {
             name: "John Doe",

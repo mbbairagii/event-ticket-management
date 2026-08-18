@@ -1,53 +1,154 @@
-:root {
-  font-family: Arial, Helvetica, sans-serif;
-  color: #000000;
-  background: #ffffff;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-dark: #070709;
+    --bg-elevated: #0f1015;
+    --surface-card: #14151c;
+    --surface-hover: #1b1c26;
+    
+    /* Signature Acid Neon Lime Palette */
+    --acid-lime: #ccff00;
+    --acid-lime-glow: rgba(204, 255, 0, 0.35);
+    --acid-orange: #ff4d00;
+    --acid-cyan: #00f0ff;
+    
+    --text-pure: #ffffff;
+    --text-dim: #9ba1b0;
+    --text-muted: #626778;
+    --border-subtle: rgba(255, 255, 255, 0.12);
+    --border-medium: rgba(255, 255, 255, 0.22);
+    --border-lime: rgba(204, 255, 0, 0.45);
+    
+    color-scheme: dark;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    background-color: var(--bg-dark);
+    color: var(--text-pure);
+  }
+
+  body {
+    min-height: 100vh;
+    background-color: var(--bg-dark);
+    color: var(--text-pure);
+    line-height: 1.5;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    overflow-x: hidden;
+  }
+
+  /* Custom dark scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #070709;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #272935;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #ccff00;
+  }
+
+  img, svg, picture, video {
+    display: block;
+    max-width: 100%;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* Typography Utility Classes */
+.font-syne {
+  font-family: 'Syne', sans-serif;
 }
 
-html,
-body,
-#root {
-  min-width: 320px;
-  min-height: 100%;
+.font-grotesk {
+  font-family: 'Space Grotesk', sans-serif;
 }
 
-body {
-  min-height: 100vh;
-  background: #ffffff;
-  color: #000000;
-  line-height: 1.5;
+.font-mono {
+  font-family: 'DM Mono', monospace;
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
+.stroke-text {
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.9);
+  color: transparent;
 }
 
-button {
-  cursor: pointer;
+.stroke-text-lime {
+  -webkit-text-stroke: 1.5px #ccff00;
+  color: transparent;
 }
 
-img,
-svg,
-picture {
-  display: none !important;
+.stroke-text-thick {
+  -webkit-text-stroke: 2.5px rgba(255, 255, 255, 0.9);
+  color: transparent;
 }
 
-a {
-  color: #000000;
-  text-decoration: underline;
+/* Funky Visual Accents & Effects */
+.bg-grid-pattern {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
 }
 
-a:hover {
-  text-decoration: none;
+.bg-dot-pattern {
+  background-image: radial-gradient(rgba(204, 255, 0, 0.15) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
+
+.neon-glow-lime {
+  box-shadow: 0 0 30px rgba(204, 255, 0, 0.25), 0 0 60px rgba(204, 255, 0, 0.12);
+}
+
+.neon-border-lime {
+  border-color: #ccff00;
+  box-shadow: 0 0 15px rgba(204, 255, 0, 0.35);
+}
+
+.glass-panel {
+  background: rgba(18, 19, 25, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-panel-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-panel-hover:hover {
+  background: rgba(24, 25, 34, 0.9);
+  border-color: rgba(204, 255, 0, 0.4);
+  transform: translateY(-3px);
+}
+
+/* Sound wave pulse */
+@keyframes soundPulse {
+  0%, 100% {
+    height: 4px;
+  }
+  50% {
+    height: 24px;
+  }
+}
+.sound-bar-1 { animation: soundPulse 0.8s ease-in-out infinite; }
+.sound-bar-2 { animation: soundPulse 1.1s ease-in-out infinite 0.2s; }
+.sound-bar-3 { animation: soundPulse 0.7s ease-in-out infinite 0.4s; }
+.sound-bar-4 { animation: soundPulse 1.3s ease-in-out infinite 0.1s; }
+.sound-bar-5 { animation: soundPulse 0.9s ease-in-out infinite 0.3s; }

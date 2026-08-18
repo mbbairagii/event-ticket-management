@@ -44,6 +44,10 @@ public class Event {
     @Column(nullable = false)
     private String category;
 
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String imageUrl;
+
     @Column(nullable = false)
     private Long organizerId;
 }

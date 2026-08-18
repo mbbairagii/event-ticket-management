@@ -8,6 +8,7 @@ import com.eventticketplatform.userservice.entity.User;
 import com.eventticketplatform.userservice.exception.ResourceNotFoundException;
 import com.eventticketplatform.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public UserResponseDto register(UserRegistrationDto dto) {
         if (userRepository.existsByEmail(dto.getEmail())) {
@@ -24,23 +26,20 @@ public class UserService {
         }
 
         User user = new User();
-
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());
-        user.setPassword(dto.getPassword());
+        
+        // Salt and hash password using BCrypt
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
 
-        System.out.println("RECEIVED ROLE: " + dto.getRole());
         Role requestedRole = dto.getRole();
-
         if (requestedRole == Role.ORGANIZER) {
             user.setRole(Role.ORGANIZER);
         } else {
             user.setRole(Role.USER);
         }
 
-        System.out.println("ROLE BEFORE SAVE: " + user.getRole());
         User saved = userRepository.save(user);
-
         return toResponseDto(saved);
     }
 
@@ -48,15 +47,21 @@ public class UserService {
         User user = userRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "No user found with email: "
-                                        + dto.getEmail()
+                                "No user found with email: " + dto.getEmail()
                         )
                 );
 
-        if (!user.getPassword().equals(dto.getPassword())) {
-            throw new IllegalArgumentException(
-                    "Invalid credentials"
-            );
+        // Verify password with BCrypt, with fallback and auto-upgrade for legacy plaintext passwords
+        boolean isMatch = passwordEncoder.matches(dto.getPassword(), user.getPassword());
+        if (!isMatch && user.getPassword().equals(dto.getPassword())) {
+            // Legacy plaintext match -> upgrade to BCrypt
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+            userRepository.save(user);
+            isMatch = true;
+        }
+
+        if (!isMatch) {
+            throw new IllegalArgumentException("Invalid email or password.");
         }
 
         return toResponseDto(user);
@@ -75,12 +80,10 @@ public class UserService {
 
     private UserResponseDto toResponseDto(User user) {
         UserResponseDto dto = new UserResponseDto();
-
         dto.setId(user.getId());
         dto.setName(user.getName());
         dto.setEmail(user.getEmail());
         dto.setRole(user.getRole());
-
         return dto;
     }
 }

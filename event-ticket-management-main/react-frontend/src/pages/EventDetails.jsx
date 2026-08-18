@@ -1,10 +1,24 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { getEventById, createBooking } from '../services/api';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { 
+  getEventById, 
+  createBooking 
+} from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import PaymentModal from '../components/PaymentModal';
+import { 
+  Calendar, 
+  MapPin, 
+  Ticket, 
+  ShieldCheck, 
+  ArrowLeft, 
+  AlertCircle,
+  Plus,
+  Minus,
+  CheckCircle2
+} from 'lucide-react';
 
-function EventDetails() {
+export default function EventDetails() {
   const { id } = useParams();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -14,20 +28,22 @@ function EventDetails() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchEvent();
-  }, [id]);
-
-  const fetchEvent = async () => {
+  const fetchEvent = useCallback(async () => {
     try {
+      setLoading(true);
       const response = await getEventById(id);
       setEvent(response.data);
     } catch (err) {
-      setError('Event not found');
+      console.error('Fetch event error', err);
+      setError('Event not found or failed to load.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchEvent();
+  }, [fetchEvent]);
 
   const handleBook = () => {
     if (!user) {
@@ -47,114 +63,251 @@ function EventDetails() {
       setIsPaymentOpen(false);
       navigate('/bookings');
     } catch (err) {
-      setError(err.response?.data?.message || 'Booking failed');
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || 'Booking failed on backend.';
+      setError(errorMsg);
       setIsPaymentOpen(false);
+      // Re-fetch event details to update available seats immediately
+      fetchEventDetails();
     }
   };
 
-  if (loading) return <div style={{ textAlign: 'center', marginTop: '4rem' }}>Loading...</div>;
-  if (!event) return <div style={{ textAlign: 'center', marginTop: '4rem', color: 'red' }}>{error}</div>;
+  if (loading) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center bg-[#070709] text-white">
+        <div className="funky-spinner mb-4" />
+        <p className="font-mono text-xs text-gray-400 uppercase">Synchronizing event access token...</p>
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center bg-[#070709] text-white p-6 text-center">
+        <AlertCircle size={48} className="text-red-500 mb-4" />
+        <h2 className="font-syne font-black text-3xl mb-2">SHOW NOT FOUND</h2>
+        <p className="text-gray-400 font-mono text-xs mb-6">{error || 'This event does not exist.'}</p>
+        <Link to="/events" className="btn-funky-primary text-xs">
+          BACK TO SHOW CALENDAR
+        </Link>
+      </div>
+    );
+  }
+
+  const isSoldOut = event.availableSeats === 0;
+  const totalPrice = (event.price || 0) * quantity;
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      {error && <div className="error-message" style={{ marginBottom: '2rem' }}>{error}</div>}
+    <div className="w-full bg-[#070709] text-white min-h-screen pb-24">
+      
+      {/* Back link */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <Link 
+          to="/events" 
+          className="inline-flex items-center gap-2 font-mono text-xs text-gray-400 hover:text-[#ccff00] transition-colors"
+        >
+          <ArrowLeft size={14} />
+          <span>BACK TO ALL SHOWS</span>
+        </Link>
+      </div>
 
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div className="event-details-hero" style={{ backgroundImage: `url(${event.imageUrl || '/images/event_music_festival.jpg'})` }}>
-          <div className="event-details-hero-overlay">
-            <span style={{ background: 'var(--accent-primary)', color: 'white', padding: '0.4rem 1rem', borderRadius: '2rem', fontSize: '1rem', marginBottom: '1rem', display: 'inline-block' }}>
-              {event.category}
-            </span>
-            <h2 style={{ fontSize: '3rem', margin: 0, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{event.name}</h2>
+      {/* Hero Showcase Poster */}
+      <section className="relative mt-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="relative min-h-[400px] sm:min-h-[480px] w-full border border-white/15 flex flex-col justify-end p-6 sm:p-12 overflow-hidden bg-[#141520]">
+          
+          {/* Hero Poster Image */}
+          <img
+            src={event.imageUrl || '/concert-background-dark.png'}
+            alt={event.name}
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = '/concert-background-dark.png';
+            }}
+          />
+          
+          {/* Overlay Scrim */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#070709] via-black/65 to-black/30 pointer-events-none" />
+          
+          <div className="relative z-10 space-y-4 max-w-3xl">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="badge-lime">{event.category || 'LIVE SHOW'}</span>
+              <span className="badge-dark">OFFICIAL PASS</span>
+              {isSoldOut && <span className="badge-orange">SOLD OUT</span>}
+            </div>
+
+            <h1 className="font-syne font-black text-3xl sm:text-5xl md:text-6xl text-white uppercase leading-[0.95] tracking-tight">
+              {event.name}
+            </h1>
+
+            <div className="flex flex-wrap items-center gap-6 font-mono text-xs text-gray-300 pt-2">
+              <div className="flex items-center gap-2">
+                <Calendar size={14} className="text-[#ccff00]" />
+                <span>{event.eventDate}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin size={14} className="text-[#ccff00]" />
+                <span>{event.venue}, {event.city}</span>
+              </div>
+            </div>
           </div>
         </div>
+      </section>
 
-        <div style={{ padding: '2.5rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '3rem' }}>
+      {/* Main Grid: Details + Booking Pass Box */}
+      <section className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mt-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          
+          {/* Left Column: Information & specs */}
+          <div className="lg:col-span-7 space-y-10">
             
-            <div>
-              <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>About this Event</h3>
-              <p className="text-secondary" style={{ fontSize: '1.1rem', lineHeight: '1.8' }}>
+            {/* Description */}
+            <div className="space-y-4">
+              <h2 className="font-syne font-bold text-2xl uppercase tracking-tight text-[#ccff00]">
+                ABOUT THIS EXPERIENCE
+              </h2>
+              <p className="text-gray-300 text-base sm:text-lg leading-relaxed font-light whitespace-pre-line bg-black/40 p-4 border-l-2 border-[#ccff00]">
                 {event.description}
               </p>
             </div>
 
-            <div className="card">
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent-secondary)', marginBottom: '1.5rem' }}>
-                ₹{event.price.toFixed(2)}
+            {/* Event Specs Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-white/10 font-mono text-xs">
+              <div className="p-4 bg-[#111218] border border-white/10 space-y-1">
+                <span className="text-gray-500 uppercase">VENUE LOCATION</span>
+                <div className="font-bold text-white text-sm">{event.venue}</div>
+                <div className="text-[#ccff00]">{event.city}</div>
               </div>
-              <h3 style={{ marginBottom: '1.5rem', fontSize: '1.2rem' }}>Event Details</h3>
+
+              <div className="p-4 bg-[#111218] border border-white/10 space-y-1">
+                <span className="text-gray-500 uppercase">SEAT CAPACITY</span>
+                <div className="font-bold text-white text-sm">
+                  {event.availableSeats} Available
+                </div>
+                <div className="text-gray-400">Total: {event.totalSeats} Passes</div>
+              </div>
+            </div>
+
+            {/* Security Guarantees */}
+            <div className="p-6 bg-[#0c0d14] border border-[#ccff00]/30 space-y-4">
+              <div className="flex items-center gap-2 text-xs font-mono text-[#ccff00] uppercase font-bold">
+                <ShieldCheck size={16} />
+                <span>EVENTIFIED TICKET PROTOCOL</span>
+              </div>
+              <ul className="space-y-2 text-xs font-mono text-gray-300">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 size={13} className="text-[#ccff00]" />
+                  <span>100% Guaranteed admission with dynamic QR digital stub</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 size={13} className="text-[#ccff00]" />
+                  <span>Anti-scalp token verification at door</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 size={13} className="text-[#ccff00]" />
+                  <span>Direct settlement with event organizer</span>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+
+          {/* Right Column: Sticky Booking Ticket Box */}
+          <div className="lg:col-span-5">
+            <div className="sticky top-28 p-8 bg-[#101119] border border-white/20 shadow-2xl space-y-6">
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', color: 'var(--text-secondary)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ fontSize: '1.5rem' }}>📅</div>
-                  <div>
-                    <div style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>Date</div>
-                    <div>{event.eventDate}</div>
-                  </div>
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                <div>
+                  <span className="text-[10px] font-mono uppercase text-gray-400 block">PRICE PER PASS</span>
+                  <span className="font-syne font-black text-4xl text-[#ccff00]">
+                    ₹{Number(event.price || 0).toFixed(2)}
+                  </span>
                 </div>
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ fontSize: '1.5rem' }}>📍</div>
-                  <div>
-                    <div style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>Location</div>
-                    <div>{event.venue}</div>
-                    <div>{event.city}</div>
-                  </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-mono uppercase text-gray-400 block">CAPACITY</span>
+                  <span className={`font-mono text-xs font-bold ${event.availableSeats > 0 ? 'text-[#ccff00]' : 'text-red-400'}`}>
+                    {event.availableSeats > 0 ? `${event.availableSeats} LEFT` : 'SOLD OUT'}
+                  </span>
                 </div>
+              </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ fontSize: '1.5rem' }}>🎟️</div>
-                  <div>
-                    <div style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>Availability</div>
-                    <div style={{ color: event.availableSeats > 0 ? 'var(--accent-secondary)' : '#ef4444' }}>
-                      {event.availableSeats} / {event.totalSeats} seats
+              {/* Quantity selector */}
+              {!isSoldOut && (
+                <div className="space-y-2">
+                  <label className="text-xs font-mono uppercase text-gray-400 flex items-center justify-between">
+                    <span>SELECT NUMBER OF PASSES</span>
+                    <span>MAX: {Math.min(event.availableSeats, 10)}</span>
+                  </label>
+                  <div className="flex items-center border border-white/20 bg-black/40">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                      disabled={quantity <= 1}
+                      className="p-3 text-gray-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <div className="flex-1 text-center font-syne font-bold text-xl text-white">
+                      {quantity}
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(q => Math.min(event.availableSeats, Math.min(10, q + 1)))}
+                      disabled={quantity >= event.availableSeats || quantity >= 10}
+                      className="p-3 text-gray-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                    >
+                      <Plus size={16} />
+                    </button>
                   </div>
+                </div>
+              )}
+
+              {/* Total summary */}
+              <div className="p-4 bg-white/5 border border-white/10 space-y-2 text-xs font-mono">
+                <div className="flex justify-between text-gray-400">
+                  <span>Passes ({quantity}x)</span>
+                  <span>₹{totalPrice.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-gray-400">
+                  <span>Scalper Protection Fee</span>
+                  <span className="text-[#ccff00]">₹0.00 (FREE)</span>
+                </div>
+                <div className="pt-2 border-t border-white/10 flex justify-between text-base font-bold text-white">
+                  <span>Total Amount</span>
+                  <span className="text-[#ccff00] font-syne font-black text-xl">₹{totalPrice.toFixed(2)}</span>
                 </div>
               </div>
 
-              <hr style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '2rem 0' }} />
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Tickets</label>
-                <input 
-                  type="number" 
-                  min="1" 
-                  max={event.availableSeats}
-                  value={quantity} 
-                  onChange={(e) => setQuantity(Number(e.target.value))}
-                  style={{ width: '100%', fontSize: '1.1rem' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', fontSize: '1.2rem', fontWeight: 'bold' }}>
-                <span>Total</span>
-                <span>₹{(event.price * quantity).toFixed(2)}</span>
-              </div>
-
-              <button 
-                className="btn btn-primary" 
-                style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
+              {/* Action Button */}
+              <button
                 onClick={handleBook}
-                disabled={event.availableSeats === 0 || quantity < 1 || quantity > event.availableSeats}
+                disabled={isSoldOut || event.availableSeats < quantity}
+                className="w-full py-4 bg-[#ccff00] hover:bg-white text-black font-syne font-black text-sm uppercase tracking-widest transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
               >
-                {event.availableSeats === 0 ? 'Sold Out' : 'Book Now'}
+                <Ticket size={18} />
+                <span>{isSoldOut ? 'SHOW IS SOLD OUT' : 'SECURE PASSES NOW'}</span>
               </button>
+
+              {!user && (
+                <p className="text-[11px] font-mono text-center text-gray-400">
+                  * You will be prompted to login/register to attach passes to your account.
+                </p>
+              )}
+
             </div>
           </div>
+
         </div>
-      </div>
-      
+      </section>
+
+      {/* Razorpay Payment Modal */}
       <PaymentModal 
         isOpen={isPaymentOpen} 
         onClose={() => setIsPaymentOpen(false)} 
-        amount={event.price * quantity} 
+        amount={totalPrice} 
         userId={user?.id}
+        eventName={event.name}
         onSuccess={processBookingBackend} 
       />
+
     </div>
   );
 }
-
-export default EventDetails;

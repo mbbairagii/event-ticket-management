@@ -26,23 +26,27 @@ public class BookingService {
     private final EventServiceClient eventServiceClient;
     private final UserServiceClient userServiceClient;
 
+    /**
+     * Creates a new booking atomically.
+     * Concurrency Safety: Invokes event-service which acquires a Pessimistic Write Lock
+     * on the event row. If multiple users attempt to book the last available ticket simultaneously,
+     * the database lock serializes the requests:
+     * - The first user to acquire the lock reserves the ticket.
+     * - The second user is rejected with a SOLD_OUT / NOT_ENOUGH_SEATS exception.
+     */
     @Transactional
     public BookingResponseDto createBooking(BookingRequestDto dto) {
-        // Validate user exists (will throw Feign 404 → propagated as exception)
+        // 1. Validate user exists (will throw Feign 404 if user not found)
         userServiceClient.getUserById(dto.getUserId());
 
-        // Fetch event and check availability
-        EventDto event = eventServiceClient.getEventById(dto.getEventId());
-        if (event.getAvailableSeats() < dto.getQuantity()) {
-            throw new IllegalArgumentException(
-                    "Not enough seats. Requested: " + dto.getQuantity()
-                            + ", Available: " + event.getAvailableSeats());
+        if (dto.getQuantity() == null || dto.getQuantity() <= 0) {
+            throw new IllegalArgumentException("Booking quantity must be at least 1.");
         }
 
-        // Deduct seats in event-service
-        eventServiceClient.updateSeats(dto.getEventId(), -dto.getQuantity());
+        // 2. Atomically check and deduct seats under exclusive database lock
+        EventDto event = eventServiceClient.updateSeats(dto.getEventId(), -dto.getQuantity());
 
-        // Persist booking
+        // 3. Persist confirmed booking
         Booking booking = new Booking();
         booking.setUserId(dto.getUserId());
         booking.setEventId(dto.getEventId());
@@ -102,12 +106,11 @@ public class BookingService {
             throw new IllegalArgumentException("Booking is already cancelled.");
         }
 
-        // Restore seats in event-service
-        eventServiceClient.updateSeats(booking.getEventId(), booking.getQuantity());
+        // Restore seats atomically in event-service
+        EventDto event = eventServiceClient.updateSeats(booking.getEventId(), booking.getQuantity());
 
         booking.setStatus(BookingStatus.CANCELLED);
         Booking saved = bookingRepository.save(booking);
-        EventDto event = eventServiceClient.getEventById(booking.getEventId());
         return toResponseDto(saved, event);
     }
 

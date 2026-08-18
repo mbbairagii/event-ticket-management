@@ -20,4 +20,5 @@ public class EventDto {
     private Integer availableSeats;
     private BigDecimal price;
     private String category;
+    private String imageUrl;
 }

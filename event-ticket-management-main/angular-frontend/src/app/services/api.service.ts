@@ -71,4 +71,8 @@ export class ApiService {
   createRazorpayOrder(data: any): Observable<any> {
     return this.http.post(`${this.API_BASE_URL}/payments/create-order`, data);
   }
+
+  verifyRazorpayPayment(data: any): Observable<any> {
+    return this.http.post(`${this.API_BASE_URL}/payments/verify`, data);
+  }
 }

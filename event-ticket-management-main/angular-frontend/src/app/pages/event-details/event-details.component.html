@@ -18,7 +18,7 @@
 
     <div style="padding: 2.5rem;">
       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 3rem;">
-        
+
         <div>
           <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">About this Event</h3>
           <p class="text-secondary" style="font-size: 1.1rem; line-height: 1.8;">
@@ -31,7 +31,7 @@
             ₹{{ event.price | number:'1.2-2' }}
           </div>
           <h3 style="margin-bottom: 1.5rem; font-size: 1.2rem;">Event Details</h3>
-          
+
           <div style="display: flex; flex-direction: column; gap: 1.5rem; color: var(--text-secondary);">
             <div style="display: flex; align-items: center; gap: 1rem;">
               <div style="font-size: 1.5rem;">📅</div>
@@ -40,7 +40,7 @@
                 <div>{{ event.eventDate }}</div>
               </div>
             </div>
-            
+
             <div style="display: flex; align-items: center; gap: 1rem;">
               <div style="font-size: 1.5rem;">📍</div>
               <div>
@@ -65,9 +65,9 @@
 
           <div style="margin-bottom: 1.5rem;">
             <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Tickets</label>
-            <input 
-              type="number" 
-              min="1" 
+            <input
+              type="number"
+              min="1"
               [max]="event.availableSeats"
               [(ngModel)]="quantity"
               class="form-input"
@@ -80,8 +80,8 @@
             <span>₹{{ (event.price * quantity) | number:'1.2-2' }}</span>
           </div>
 
-          <button 
-            class="btn btn-primary" 
+          <button
+            class="btn btn-primary"
             style="width: 100%; padding: 1rem; font-size: 1.1rem;"
             (click)="handleBook()"
             [disabled]="event.availableSeats === 0 || quantity < 1 || quantity > event.availableSeats"
@@ -92,11 +92,12 @@
       </div>
     </div>
   </div>
-  
-  <app-payment-modal 
-    [isOpen]="isPaymentOpen" 
-    (close)="isPaymentOpen = false" 
-    [amount]="event.price * quantity" 
-    (success)="processBookingBackend()" 
+
+  <app-payment-modal
+    [isOpen]="isPaymentOpen"
+    (close)="isPaymentOpen = false"
+    [amount]="event.price * quantity"
+    [userId]="user?.id ?? null"
+    (success)="processBookingBackend()"
   ></app-payment-modal>
 </div>

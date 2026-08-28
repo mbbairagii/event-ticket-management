@@ -1,0 +1,244 @@
+/* ==========================================================================
+   EVENTIFIED - ACID NEON LIME FUNKY DARK THEME
+   ========================================================================== */
+
+/* Main Layout */
+.app-container {
+  min-height: 100vh;
+  background-color: #070709;
+  color: #ffffff;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Brutalist Buttons */
+.btn-funky-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background-color: #ccff00;
+  color: #000000;
+  font-family: 'DM Mono', monospace;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.85rem 1.75rem;
+  border-radius: 0px;
+  border: 1px solid #ccff00;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.btn-funky-primary:hover {
+  background-color: #ffffff;
+  border-color: #ffffff;
+  color: #000000;
+  transform: translate(2px, -2px);
+  box-shadow: -4px 4px 0px rgba(204, 255, 0, 0.85);
+}
+
+.btn-funky-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background-color: transparent;
+  color: #ffffff;
+  font-family: 'DM Mono', monospace;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.85rem 1.75rem;
+  border-radius: 0px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.btn-funky-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: #ccff00;
+  color: #ccff00;
+  transform: translate(2px, -2px);
+}
+
+.btn-funky-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: rgba(255, 77, 0, 0.15);
+  color: #ff4d00;
+  border: 1px solid rgba(255, 77, 0, 0.4);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.5rem 1rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-funky-danger:hover {
+  background-color: #ff4d00;
+  color: #000000;
+}
+
+/* Badges & Tags */
+.badge-lime {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #ccff00;
+  color: #000000;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.65rem;
+}
+
+.badge-dark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: #d1d5db;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.65rem;
+}
+
+.badge-orange {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 77, 0, 0.2);
+  color: #ff4d00;
+  border: 1px solid rgba(255, 77, 0, 0.4);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.65rem;
+}
+
+/* Ticket Stub Design */
+.ticket-stub {
+  position: relative;
+  background: #111218;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.ticket-stub::before,
+.ticket-stub::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  background-color: #070709;
+  border-radius: 50%;
+  z-index: 5;
+}
+
+.ticket-stub::before {
+  left: -10px;
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.ticket-stub::after {
+  right: -10px;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.ticket-perforation {
+  border-left: 2px dashed rgba(255, 255, 255, 0.2);
+}
+
+/* Custom Input Styles */
+.funky-input {
+  width: 100%;
+  background: #0f1017;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.95rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.funky-input.input-with-icon,
+.input-with-icon {
+  padding-left: 2.85rem !important;
+}
+
+.funky-input:focus {
+  border-color: #ccff00;
+  box-shadow: 0 0 0 2px rgba(204, 255, 0, 0.2);
+  background: #141520;
+}
+
+.funky-input::placeholder {
+  color: #5d6375;
+}
+
+/* Modal Overlay */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: grid;
+  place-items: center;
+  background: rgba(4, 4, 6, 0.85);
+  backdrop-filter: blur(12px);
+  padding: 1.5rem;
+}
+
+.modal-body {
+  width: min(540px, 100%);
+  background: #0f1017;
+  border: 1px solid rgba(204, 255, 0, 0.4);
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.9), 0 0 20px rgba(204, 255, 0, 0.15);
+  padding: 2rem;
+  position: relative;
+}
+
+/* Loading Spinner */
+.funky-spinner {
+  width: 42px;
+  height: 42px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #ccff00;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Grain texture overlay */
+.grain-overlay {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}

@@ -1,0 +1,37 @@
+<nav class="navbar">
+  <a routerLink="/" class="nav-brand" style="display: flex; align-items: center; gap: 0.5rem;">
+    <svg width="32" height="32" viewBox="0 0 100 100" class="logo-svg">
+      <defs>
+        <linearGradient id="nav-ticket-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#FF6B6B; stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#FF8E53; stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <path d="M 15 30 L 85 30 C 85 40 95 40 95 50 C 95 60 85 60 85 70 L 15 70 C 15 60 5 60 5 50 C 5 40 15 40 15 30 Z" fill="url(#nav-ticket-grad)" />
+      <line x1="70" y1="32" x2="70" y2="68" stroke="white" stroke-width="4" stroke-dasharray="4,4" />
+      <path d="M 42 38 L 45 45 L 52 45 L 46 50 L 48 57 L 42 53 L 36 57 L 38 50 L 32 45 L 39 45 Z" fill="white" />
+    </svg>
+    Eventified
+  </a>
+  
+  <div class="nav-links items-center">
+    <a routerLink="/events" class="nav-link" routerLinkActive="active">Browse Events</a>
+    
+    <ng-container *ngIf="user; else guestLinks">
+      <ng-container *ngIf="user.role === 'ADMIN' || user.role === 'ORGANIZER'">
+        <a routerLink="/dashboard" class="nav-link" style="color: var(--accent-primary)" routerLinkActive="active">
+          {{ user.role === 'ADMIN' ? 'Admin Dashboard' : 'Organizer Dashboard' }}
+        </a>
+      </ng-container>
+      
+      <a routerLink="/bookings" class="nav-link" routerLinkActive="active">My Bookings</a>
+      <span class="nav-link text-secondary" style="margin-right: 1rem;">Hello, {{ user.name }}</span>
+      <button (click)="handleLogout()" class="btn btn-secondary" style="padding: 0.4rem 1rem;">Logout</button>
+    </ng-container>
+    
+    <ng-template #guestLinks>
+      <a routerLink="/login" class="nav-link" routerLinkActive="active">Login</a>
+      <a routerLink="/register" class="btn btn-primary" style="padding: 0.4rem 1rem;">Register</a>
+    </ng-template>
+  </div>
+</nav>

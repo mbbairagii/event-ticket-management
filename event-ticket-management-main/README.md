@@ -4,6 +4,16 @@
 
 ---
 
+## 🎯 About
+
+A portfolio/learning project that shows how to build a production-shaped ticketing system from scratch. It covers microservice fundamentals (service discovery, API gateway, inter-service HTTP calls via Feign), real payment integration with Razorpay, and the concurrency challenges unique to seat-reservation systems — specifically preventing overselling when multiple users compete for the last ticket.
+
+The backend is split into four independently deployable services (User, Event, Booking, Payment), each with its own database. The React frontend has a concert-vibes dark UI with Framer Motion animations, geolocation-based event discovery, and a full booking + payment flow.
+
+> This is a prototype. See [Known Gaps](#-known-gaps-before-any-production-use) before using it in production.
+
+---
+
 ## 🛠 Tech Stack
 
 **Backend:** Java 17 · Spring Boot 3.3 · Spring Cloud (Eureka, Gateway, OpenFeign) · Spring Data JPA · MySQL 8 · Razorpay SDK · Lombok · Maven multi-module

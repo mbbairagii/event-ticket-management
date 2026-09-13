@@ -1,14 +1,14 @@
 # 🎟️ Event Ticket Platform — Microservices Edition
 
-> Full-stack event ticketing system — **Spring Boot microservices** backend + **React 19 + Vite** frontend. Browse events, reserve seats, pay via Razorpay.
+> Full-stack event ticketing system — **Spring Boot microservices** backend + **React 19 + Vite** frontend. Browse events, reserve seats, pay via Razorpay, and cancel with tiered refunds.
 
 ---
 
 ## 🎯 About
 
-A portfolio/learning project that shows how to build a production-shaped ticketing system from scratch. It covers microservice fundamentals (service discovery, API gateway, inter-service HTTP calls via Feign), real payment integration with Razorpay, and the concurrency challenges unique to seat-reservation systems — specifically preventing overselling when multiple users compete for the last ticket.
+A portfolio/learning project that shows how to build a production-shaped ticketing system from scratch. It covers microservice fundamentals (service discovery, API gateway, inter-service HTTP calls via Feign), real payment integration with Razorpay (including refunds), DDoS protection via a token-bucket rate limiter at the gateway, and the concurrency challenges unique to seat-reservation systems — specifically preventing overselling when multiple users compete for the last ticket.
 
-The backend is split into four independently deployable services (User, Event, Booking, Payment), each with its own database. The React frontend has a concert-vibes dark UI with Framer Motion animations, geolocation-based event discovery, and a full booking + payment flow.
+The backend is split into four independently deployable services (User, Event, Booking, Payment), each with its own database. The React frontend has a concert-vibes dark UI with Framer Motion animations, geolocation-based event discovery, and a full booking + payment + refund flow.
 
 > This is a prototype. See [Known Gaps](#-known-gaps-before-any-production-use) before using it in production.
 
@@ -50,11 +50,11 @@ Each service owns its own database — no cross-service DB foreign keys.
 | Service | Port | What it does |
 |---|---:|---|
 | **Eureka Server** | 8761 | Service registry |
-| **API Gateway** | 8080 | Single entry point; routes all traffic via Eureka load-balancing |
-| **User Service** | 8081 | Register, login, user lookup. Roles: `USER` · `ORGANIZER` · `ADMIN` |
+| **API Gateway** | 8080 | Single entry point; routes all traffic; in-memory token-bucket **rate limiter** (30 req/s general, 5 req/s on auth paths) |
+| **User Service** | 8085 | Register, login, user lookup. Roles: `USER` · `ORGANIZER` · `ADMIN` |
 | **Event Service** | 8082 | Events CRUD, image uploads (≤20 MB), pagination/filtering, atomic seat management |
 | **Booking Service** | 8083 | Seat reservation lifecycle; scheduler expires unpaid holds every 15 s |
-| **Payment Service** | 8084 | Razorpay order creation + HMAC-SHA256 signature verification |
+| **Payment Service** | 8084 | Razorpay order creation + HMAC-SHA256 verification + **tiered refund** (100% / 50% / 0% by days-to-event) |
 | **React Frontend** | 5173 | Web UI |
 
 ---
@@ -125,6 +125,36 @@ Even if the scheduler hasn't run yet, `confirmBooking` checks `expiresAt` at the
 
 > **Security:** Signature is verified with `razorpay.key-secret` on the backend only. The key is never sent to the browser.
 
+### Refund Flow
+
+```
+1. User clicks "Cancel" on My Passes page
+2. POST /api/payments/refund/{bookingId}
+3. Backend checks days until event:
+   > 7 days  → 100% refund
+   3–7 days  → 50%  refund
+   < 3 days  → ❌ no refund (72-hour window)
+4. Razorpay refund API called (partial or full)
+5. Booking cancelled + seats restored atomically
+6. Payment status → REFUNDED, refund metadata persisted
+```
+
+---
+
+## 🛡 DDoS Protection (Rate Limiting)
+
+`RateLimitFilter` is a `GlobalFilter` on the API Gateway that runs at `order = -2` (before JWT validation):
+
+| Path | Max burst | Refill rate |
+|---|---|---|
+| All general API paths | 60 requests | 30 req/s |
+| `/api/users/login`, `/api/users/register` | 10 requests | 5 req/s |
+
+- **Algorithm:** In-memory token-bucket per client IP (no Redis dependency).
+- **IP resolution:** `X-Forwarded-For` → `X-Real-IP` → socket address.
+- **Response:** HTTP 429 with `Retry-After: 1` and JSON error body.
+- **Stale-bucket eviction:** Probabilistic (0.5%) cleanup — buckets idle >2 min are evicted.
+
 ---
 
 ## 📐 Data Models
@@ -151,7 +181,8 @@ status ENUM(PENDING_PAYMENT, CONFIRMED, CANCELLED, EXPIRED) · expiresAt
 ### Payment
 ```
 id · bookingId · userId · razorpayOrderId · razorpayPaymentId · razorpaySignature
-transactionId · amount · status ENUM(PENDING, COMPLETED, FAILED) · paymentMethod · paymentDate
+razorpayRefundId · refundAmount · refundDate
+transactionId · amount · status ENUM(PENDING, COMPLETED, FAILED, REFUNDED) · paymentMethod · paymentDate
 ```
 
 </details>
@@ -256,7 +287,7 @@ All requests via the Gateway at `http://localhost:8080`.
 `POST /api/bookings` · `GET /api/bookings/{id}` · `GET /api/bookings/user/{userId}` · `GET /api/bookings/organizer/{organizerId}` · `PUT /api/bookings/{id}/confirm` · `PUT /api/bookings/{id}/cancel`
 
 **Payments**
-`POST /api/payments/create-order` · `POST /api/payments/verify` · `GET /api/payments/booking/{bookingId}`
+`POST /api/payments/create-order` · `POST /api/payments/verify` · `GET /api/payments/booking/{bookingId}` · `POST /api/payments/refund/{bookingId}`
 
 <details>
 <summary>Sample request bodies</summary>
@@ -331,8 +362,9 @@ ALTER TABLE users MODIFY COLUMN role ENUM('ADMIN', 'USER', 'ORGANIZER') NOT NULL
 | No server-side authorization | 🔴 High | Verify ownership on every mutating endpoint |
 | `ddl-auto=update` | 🟡 Medium | Replace with Flyway or Liquibase |
 | No Docker Compose | 🟡 Medium | Single command to spin up MySQL + all services |
-| No automated tests | 🟡 Medium | JUnit 5 + Mockito + Spring Boot integration tests |
+| ~~No automated tests~~ | ✅ Done | Unit tests added for User, Payment (refund), RateLimitFilter |
 | No CORS config | 🟡 Medium | Needed for non-localhost deployments |
+| Rate limiter is in-memory only | 🟡 Medium | Replace with Redis-backed limiter for multi-instance deployments |
 
 ---
 

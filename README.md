@@ -327,5 +327,5 @@ All requests via the Gateway at `http://localhost:8080`.
 ---
 
 
-*Built with ☕ Java, ⚛️ React, and a lot of 🎶*
+
 

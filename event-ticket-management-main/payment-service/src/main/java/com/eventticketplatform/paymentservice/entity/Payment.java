@@ -43,4 +43,10 @@ public class Payment {
     private String razorpayPaymentId;
 
     private String razorpaySignature;
+
+    private String razorpayRefundId;
+
+    private BigDecimal refundAmount;
+
+    private LocalDateTime refundDate;
 }

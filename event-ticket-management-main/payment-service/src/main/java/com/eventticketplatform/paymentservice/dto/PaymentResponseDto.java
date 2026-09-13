@@ -18,4 +18,8 @@ public class PaymentResponseDto {
     private String transactionId;
     private String razorpayOrderId;
     private String razorpayPaymentId;
+    private String razorpayRefundId;
+    private LocalDateTime refundDate;
+    private BigDecimal refundAmount;
+    private Integer refundPercentage;
 }

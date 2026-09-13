@@ -26,7 +26,7 @@ spring:
           lower-case-service-id: true
       routes:
         - id: user-service
-          uri: http://localhost:8085
+          uri: lb://user-service
           predicates:
             - Path=/api/users/**
         - id: oauth2-authorization
@@ -42,15 +42,15 @@ spring:
           predicates:
             - Path=/login/oauth2/**
         - id: event-service
-          uri: lb://event-service
+          uri: http://localhost:8082
           predicates:
             - Path=/api/events/**
         - id: booking-service
-          uri: lb://booking-service
+          uri: http://localhost:8083
           predicates:
             - Path=/api/bookings/**
         - id: payment-service
-          uri: lb://payment-service
+          uri: http://localhost:8084
           predicates:
             - Path=/api/payments/**
 

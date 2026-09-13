@@ -36,4 +36,10 @@ public class PaymentController {
                 paymentService.getPaymentByBooking(bookingId)
         );
     }
+
+    @PostMapping("/refund/{bookingId}")
+    public ResponseEntity<PaymentResponseDto> refundPayment(
+            @PathVariable Long bookingId) {
+        return ResponseEntity.ok(paymentService.processRefund(bookingId));
+    }
 }

@@ -17,5 +17,6 @@ public class BookingDto {
     private BigDecimal totalAmount;
     private LocalDateTime bookingDate;
     private LocalDateTime expiresAt;
+    private LocalDateTime eventDate;
     private BookingStatus status;
 }

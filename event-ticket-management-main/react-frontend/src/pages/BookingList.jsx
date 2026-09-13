@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getUserBookings, cancelBooking } from '../services/api';
+import { getUserBookings, cancelBooking, refundPayment } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { 
   Ticket, 
@@ -20,6 +20,7 @@ export default function BookingList() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState(null);
+  const [refundingId, setRefundingId] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -66,6 +67,32 @@ export default function BookingList() {
         alert(error.response?.data?.error || error.response?.data?.message || 'Failed to cancel booking pass.');
       } finally {
         setCancellingId(null);
+      }
+    }
+  };
+
+  const getRefundPolicyText = (eventDate) => {
+    if (!eventDate) return '100% refund';
+    const days = Math.ceil((new Date(eventDate) - new Date()) / (1000 * 60 * 60 * 24));
+    if (days > 7)  return '100% refund (event is more than 7 days away)';
+    if (days >= 3) return '50% refund (event is 3–7 days away)';
+    return 'No refund available (event is less than 3 days away)';
+  };
+
+  const handleRefund = async (booking) => {
+    const policyText = getRefundPolicyText(booking.eventDate);
+    if (window.confirm(`Refund policy for this booking:\n${policyText}\n\nProceed with refund request?`)) {
+      try {
+        setRefundingId(booking.id);
+        const res = await refundPayment(booking.id);
+        const pct = res.data?.refundPercentage ?? 100;
+        const amt = res.data?.refundAmount;
+        showToast(`✓ Refund of ${pct}%${amt ? ` (₹${amt})` : ''} initiated! Credit within 5-7 business days.`);
+        await fetchBookings();
+      } catch (error) {
+        alert(error.response?.data?.message || 'Refund failed. Please try again or contact support.');
+      } finally {
+        setRefundingId(null);
       }
     }
   };
@@ -247,15 +274,24 @@ export default function BookingList() {
                       </span>
                     </div>
 
-                    {/* Cancellation button if confirmed */}
+                    {/* Actions for confirmed bookings */}
                     {isConfirmed && (
-                      <button
-                        onClick={() => handleCancel(booking.id)}
-                        disabled={cancellingId === booking.id}
-                        className="text-[11px] font-mono text-red-400 hover:text-red-300 underline cursor-pointer"
-                      >
-                        {cancellingId === booking.id ? 'Cancelling...' : 'Cancel Booking Pass'}
-                      </button>
+                      <div className="flex flex-col gap-1.5 w-full items-center">
+                        <button
+                          onClick={() => handleRefund(booking)}
+                          disabled={refundingId === booking.id}
+                          className="w-full py-2 bg-[#ccff00]/10 border border-[#ccff00]/40 text-[#ccff00] hover:bg-[#ccff00]/20 font-mono text-[11px] uppercase tracking-widest transition-all cursor-pointer"
+                        >
+                          {refundingId === booking.id ? 'Processing Refund...' : '↩ Request Refund'}
+                        </button>
+                        <button
+                          onClick={() => handleCancel(booking.id)}
+                          disabled={cancellingId === booking.id}
+                          className="text-[10px] font-mono text-red-400/60 hover:text-red-400 underline cursor-pointer"
+                        >
+                          {cancellingId === booking.id ? 'Cancelling...' : 'Cancel without refund'}
+                        </button>
+                      </div>
                     )}
                   </div>
 

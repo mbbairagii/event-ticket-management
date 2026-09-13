@@ -150,19 +150,20 @@ public class BookingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
 
         if (booking.getStatus() == BookingStatus.CANCELLED || booking.getStatus() == BookingStatus.EXPIRED) {
-            return toResponseDto(booking, eventServiceClient.getEventById(booking.getEventId()));
+            return toResponseDto(booking, fetchEventSafe(booking.getEventId()));
         }
 
-        if (booking.getStatus() == BookingStatus.CONFIRMED) {
-            throw new IllegalStateException("Cannot cancel an already confirmed booking.");
+        // Restore seats back to the event (for both PENDING_PAYMENT and CONFIRMED)
+        try {
+            eventServiceClient.updateSeats(booking.getEventId(), booking.getQuantity());
+        } catch (Exception ex) {
+            // Log but continue — seat restoration failure shouldn't block cancel
+            System.err.println("Warning: failed to restore seats for booking " + bookingId + ": " + ex.getMessage());
         }
-
-        // Restore seats atomically in event-service
-        EventDto event = eventServiceClient.updateSeats(booking.getEventId(), booking.getQuantity());
 
         booking.setStatus(BookingStatus.CANCELLED);
         Booking saved = bookingRepository.save(booking);
-        return toResponseDto(saved, event);
+        return toResponseDto(saved, fetchEventSafe(saved.getEventId()));
     }
 
     private BookingResponseDto toResponseDto(Booking booking, EventDto event) {

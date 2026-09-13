@@ -9,6 +9,32 @@ const api = axios.create({
   },
 });
 
+// Attach JWT token to every request
+api.interceptors.request.use((config) => {
+  const userData = localStorage.getItem('user');
+  if (userData) {
+    try {
+      const user = JSON.parse(userData);
+      if (user?.token) {
+        config.headers['Authorization'] = `Bearer ${user.token}`;
+      }
+    } catch (_) {}
+  }
+  return config;
+});
+
+// On 401, clear stale session and redirect to login
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Users
 export const registerUser = (data) => api.post('/users/register', data);
 export const loginUser = (data) => api.post('/users/login', data);
@@ -36,3 +62,4 @@ export const getAllBookings = () => api.get('/bookings');
 // Payments
 export const createRazorpayOrder = (data) => api.post('/payments/create-order', data);
 export const verifyRazorpayPayment = (data) => api.post('/payments/verify', data);
+export const refundPayment = (bookingId) => api.post(`/payments/refund/${bookingId}`);

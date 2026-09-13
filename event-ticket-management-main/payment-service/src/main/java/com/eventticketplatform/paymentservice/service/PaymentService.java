@@ -151,6 +151,80 @@ public class PaymentService {
         return toResponseDto(payment);
     }
 
+    /**
+     * Tiered refund policy based on days until the event:
+     *  > 7 days  → 100% refund
+     *  3–7 days  → 50% refund
+     *  < 3 days  → 0% refund (no refund allowed)
+     */
+    public PaymentResponseDto processRefund(Long bookingId) {
+        Payment payment = paymentRepository.findByBookingId(bookingId)
+                .orElseThrow(() -> new RuntimeException("No payment found for booking: " + bookingId));
+
+        if (payment.getStatus() == PaymentStatus.REFUNDED) {
+            throw new IllegalStateException("Payment has already been refunded.");
+        }
+        if (payment.getStatus() != PaymentStatus.COMPLETED) {
+            throw new IllegalStateException("Only completed payments can be refunded.");
+        }
+        if (payment.getRazorpayPaymentId() == null) {
+            throw new IllegalStateException("No Razorpay payment ID found — cannot initiate refund.");
+        }
+
+        // Determine refund percentage based on days until event
+        BookingDto booking = bookingServiceClient.getBookingById(bookingId);
+        int refundPct = calculateRefundPercentage(booking.getEventDate());
+
+        if (refundPct == 0) {
+            throw new IllegalStateException(
+                "Refund not available: the event is less than 3 days away. No refunds are issued within 72 hours of the event.");
+        }
+
+        BigDecimal refundAmount = payment.getAmount()
+                .multiply(BigDecimal.valueOf(refundPct))
+                .divide(BigDecimal.valueOf(100));
+        long refundInPaise = refundAmount.multiply(BigDecimal.valueOf(100)).longValueExact();
+
+        try {
+            RazorpayClient client = new RazorpayClient(razorpayKeyId, razorpayKeySecret);
+
+            JSONObject refundRequest = new JSONObject();
+            refundRequest.put("amount", refundInPaise);
+            refundRequest.put("speed", "optimum");
+
+            com.razorpay.Refund refund = client.payments.refund(payment.getRazorpayPaymentId(), refundRequest);
+
+            payment.setStatus(PaymentStatus.REFUNDED);
+            payment.setRazorpayRefundId(refund.get("id"));
+            payment.setRefundAmount(refundAmount);
+            payment.setRefundDate(LocalDateTime.now());
+            Payment saved = paymentRepository.save(payment);
+
+            // Cancel the booking and restore seats
+            try {
+                bookingServiceClient.cancelBooking(bookingId);
+            } catch (Exception ex) {
+                System.err.println("Warning: refund issued but booking cancel failed: " + ex.getMessage());
+            }
+
+            PaymentResponseDto dto = toResponseDto(saved);
+            dto.setRefundPercentage(refundPct);
+            dto.setRefundAmount(refundAmount);
+            return dto;
+
+        } catch (RazorpayException e) {
+            throw new IllegalStateException("Razorpay refund failed: " + e.getMessage(), e);
+        }
+    }
+
+    private int calculateRefundPercentage(LocalDateTime eventDate) {
+        if (eventDate == null) return 100; // no event date info → allow full refund
+        long daysUntilEvent = java.time.temporal.ChronoUnit.DAYS.between(LocalDateTime.now(), eventDate);
+        if (daysUntilEvent > 7)  return 100;
+        if (daysUntilEvent >= 3) return 50;
+        return 0;
+    }
+
     private PaymentResponseDto toResponseDto(Payment p) {
         PaymentResponseDto dto = new PaymentResponseDto();
         dto.setId(p.getId());
@@ -163,6 +237,9 @@ public class PaymentService {
         dto.setTransactionId(p.getTransactionId());
         dto.setRazorpayOrderId(p.getRazorpayOrderId());
         dto.setRazorpayPaymentId(p.getRazorpayPaymentId());
+        dto.setRazorpayRefundId(p.getRazorpayRefundId());
+        dto.setRefundDate(p.getRefundDate());
+        dto.setRefundAmount(p.getRefundAmount());
         return dto;
     }
 }

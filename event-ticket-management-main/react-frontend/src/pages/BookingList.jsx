@@ -12,16 +12,37 @@ import {
   Mail,
   CalendarPlus,
   CheckCircle2,
-  ShieldCheck
+  ShieldCheck,
+  AlertTriangle,
+  AlertCircle,
+  X,
+  RotateCcw
 } from 'lucide-react';
 import AlienLogo from '../components/AlienLogo';
 
 export default function BookingList() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [cancellingId, setCancellingId] = useState(null);
-  const [refundingId, setRefundingId] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  
+  // Custom Project Modal States (No browser popups!)
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    type: null, // 'CANCEL' | 'REFUND'
+    booking: null,
+    title: '',
+    description: '',
+    policyNote: '',
+    confirmText: 'CONFIRM'
+  });
+
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    title: '',
+    message: ''
+  });
+
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -53,47 +74,81 @@ export default function BookingList() {
 
   const showToast = (msg) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(''), 3500);
-  };
-
-  const handleCancel = async (id) => {
-    if (window.confirm('Are you sure you want to cancel this booking pass? This action will release your seats back to the public pool.')) {
-      try {
-        setCancellingId(id);
-        await cancelBooking(id);
-        showToast('✓ Booking pass cancelled and seats restored to pool.');
-        await fetchBookings();
-      } catch (error) {
-        alert(error.response?.data?.error || error.response?.data?.message || 'Failed to cancel booking pass.');
-      } finally {
-        setCancellingId(null);
-      }
-    }
+    setTimeout(() => setToastMessage(''), 4500);
   };
 
   const getRefundPolicyText = (eventDate) => {
-    if (!eventDate) return '100% refund';
+    if (!eventDate) return '100% refund available.';
     const days = Math.ceil((new Date(eventDate) - new Date()) / (1000 * 60 * 60 * 24));
-    if (days > 7)  return '100% refund (event is more than 7 days away)';
-    if (days >= 3) return '50% refund (event is 3–7 days away)';
-    return 'No refund available (event is less than 3 days away)';
+    if (days > 7)  return 'Eligible for 100% full refund (event is more than 7 days away).';
+    if (days >= 3) return 'Eligible for 50% partial refund (event is between 3 to 7 days away).';
+    return '0% refund: Show takes place in less than 72 hours. Tickets are non-refundable.';
   };
 
-  const handleRefund = async (booking) => {
-    const policyText = getRefundPolicyText(booking.eventDate);
-    if (window.confirm(`Refund policy for this booking:\n${policyText}\n\nProceed with refund request?`)) {
-      try {
-        setRefundingId(booking.id);
-        const res = await refundPayment(booking.id);
-        const pct = res.data?.refundPercentage ?? 100;
-        const amt = res.data?.refundAmount;
-        showToast(`✓ Refund of ${pct}%${amt ? ` (₹${amt})` : ''} initiated! Credit within 5-7 business days.`);
+  const promptCancel = (booking) => {
+    setConfirmModal({
+      isOpen: true,
+      type: 'CANCEL',
+      booking,
+      title: 'CANCEL RESERVATION',
+      description: `Are you sure you want to cancel pass #${booking.id} for "${booking.eventName || 'Live Event'}"?`,
+      policyNote: 'Your held seats will be immediately released back into the public ticket pool.',
+      confirmText: 'YES, CANCEL PASS'
+    });
+  };
+
+  const promptRefund = (booking) => {
+    const policy = getRefundPolicyText(booking.eventDate);
+    const isNonRefundable = policy.startsWith('0%');
+
+    setConfirmModal({
+      isOpen: true,
+      type: 'REFUND',
+      booking,
+      title: 'REQUEST TICKET REFUND',
+      description: `Initiate automated refund for pass #${booking.id} (${booking.quantity} ticket(s) - ₹${Number(booking.totalAmount || 0).toFixed(2)})?`,
+      policyNote: policy,
+      confirmText: isNonRefundable ? 'CANCEL PASS ONLY' : 'CONFIRM REFUND'
+    });
+  };
+
+  const handleModalConfirm = async () => {
+    const { type, booking } = confirmModal;
+    if (!booking) return;
+
+    setActionLoading(true);
+    try {
+      if (type === 'CANCEL') {
+        await cancelBooking(booking.id);
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        showToast('✓ Booking pass cancelled and seats restored to pool.');
         await fetchBookings();
-      } catch (error) {
-        alert(error.response?.data?.message || 'Refund failed. Please try again or contact support.');
-      } finally {
-        setRefundingId(null);
+      } else if (type === 'REFUND') {
+        const policy = getRefundPolicyText(booking.eventDate);
+        if (policy.startsWith('0%')) {
+          // Non-refundable policy (>72 hrs) -> cancel booking and release seats
+          await cancelBooking(booking.id);
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          showToast('✓ Booking pass cancelled. (Non-refundable per policy: show is < 72 hrs away).');
+          await fetchBookings();
+        } else {
+          const res = await refundPayment(booking.id);
+          const pct = res.data?.refundPercentage ?? 100;
+          const amt = res.data?.refundAmount;
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          showToast(`✓ Refund of ${pct}%${amt ? ` (₹${amt})` : ''} processed! Database and inventory updated.`);
+          await fetchBookings();
+        }
       }
+    } catch (error) {
+      setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      setAlertModal({
+        isOpen: true,
+        title: 'OPERATION FAILED',
+        message: error.response?.data?.message || error.response?.data?.error || 'Action could not be completed. Please try again.'
+      });
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -123,6 +178,96 @@ export default function BookingList() {
         <div className="fixed top-24 right-6 z-50 p-4 bg-[#0f1017] border border-[#ccff00] text-[#ccff00] font-mono text-xs shadow-2xl flex items-center gap-2 animate-bounce">
           <CheckCircle2 size={16} />
           <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Custom Confirmation Modal (Replaces window.confirm) */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[#0e0f16] border border-[#ccff00] p-6 sm:p-8 space-y-6 shadow-[0_0_50px_rgba(204,255,0,0.15)] relative">
+            <button
+              onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-[#ccff00]/10 border border-[#ccff00]/30 text-[#ccff00]">
+                {confirmModal.type === 'REFUND' ? <RotateCcw size={22} /> : <AlertTriangle size={22} />}
+              </div>
+              <div>
+                <span className="text-[10px] font-mono text-[#ccff00] uppercase tracking-wider block">EVENTIFIED PROTOCOL</span>
+                <h3 className="font-syne font-black text-xl uppercase tracking-tight text-white">{confirmModal.title}</h3>
+              </div>
+            </div>
+
+            <p className="text-xs font-mono text-gray-300 leading-relaxed">
+              {confirmModal.description}
+            </p>
+
+            {confirmModal.policyNote && (
+              <div className="p-3 bg-white/5 border border-white/10 text-xs font-mono text-gray-400 space-y-1">
+                <span className="text-[10px] text-[#ccff00] font-bold block uppercase tracking-wider">Policy Notice:</span>
+                <span>{confirmModal.policyNote}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 pt-2 font-syne font-bold text-xs">
+              <button
+                type="button"
+                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                disabled={actionLoading}
+                className="py-3 px-4 border border-white/20 text-gray-300 hover:text-white hover:border-white/40 uppercase tracking-widest cursor-pointer text-center"
+              >
+                GO BACK
+              </button>
+              <button
+                type="button"
+                onClick={handleModalConfirm}
+                disabled={actionLoading}
+                className="py-3 px-4 bg-[#ccff00] hover:bg-white text-black uppercase tracking-widest cursor-pointer text-center font-black"
+              >
+                {actionLoading ? 'PROCESSING...' : confirmModal.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Error / Alert Modal (Replaces alert()) */}
+      {alertModal.isOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[#0e0f16] border border-red-500/50 p-6 sm:p-8 space-y-5 shadow-2xl relative">
+            <button
+              onClick={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-red-500/10 border border-red-500/30 text-red-400">
+                <AlertCircle size={22} />
+              </div>
+              <div>
+                <span className="text-[10px] font-mono text-red-400 uppercase tracking-wider block">ALERT</span>
+                <h3 className="font-syne font-black text-xl uppercase tracking-tight text-white">{alertModal.title}</h3>
+              </div>
+            </div>
+
+            <p className="text-xs font-mono text-gray-300 leading-relaxed">
+              {alertModal.message}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+              className="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-syne font-bold text-xs uppercase tracking-widest cursor-pointer"
+            >
+              DISMISS
+            </button>
+          </div>
         </div>
       )}
 
@@ -276,20 +421,30 @@ export default function BookingList() {
 
                     {/* Actions for confirmed bookings */}
                     {isConfirmed && (
-                      <div className="flex flex-col gap-1.5 w-full items-center">
+                      <div className="flex flex-col gap-2 w-full items-center">
                         <button
-                          onClick={() => handleRefund(booking)}
-                          disabled={refundingId === booking.id}
-                          className="w-full py-2 bg-[#ccff00]/10 border border-[#ccff00]/40 text-[#ccff00] hover:bg-[#ccff00]/20 font-mono text-[11px] uppercase tracking-widest transition-all cursor-pointer"
+                          onClick={() => promptRefund(booking)}
+                          className="w-full py-2.5 bg-[#ccff00]/10 border border-[#ccff00]/40 text-[#ccff00] hover:bg-[#ccff00]/20 font-mono text-[11px] uppercase tracking-widest transition-all cursor-pointer font-bold"
                         >
-                          {refundingId === booking.id ? 'Processing Refund...' : '↩ Request Refund'}
+                          ↩ Request Refund
                         </button>
                         <button
-                          onClick={() => handleCancel(booking.id)}
-                          disabled={cancellingId === booking.id}
+                          onClick={() => promptCancel(booking)}
                           className="text-[10px] font-mono text-red-400/60 hover:text-red-400 underline cursor-pointer"
                         >
-                          {cancellingId === booking.id ? 'Cancelling...' : 'Cancel without refund'}
+                          Cancel without refund
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Actions for pending hold bookings */}
+                    {booking.status === 'PENDING_PAYMENT' && (
+                      <div className="w-full">
+                        <button
+                          onClick={() => promptCancel(booking)}
+                          className="w-full py-2 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 font-mono text-[11px] uppercase tracking-widest transition-all cursor-pointer"
+                        >
+                          Cancel Hold
                         </button>
                       </div>
                     )}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { registerUser } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Lock, AlertCircle, CheckCircle2, ArrowRight, Ticket, Sparkles } from 'lucide-react';
+import { User, Mail, Lock, AlertCircle, CheckCircle2, ArrowRight, Ticket, Sparkles, Check, X } from 'lucide-react';
 import AlienLogo from '../components/AlienLogo';
 
 export default function Register() {
@@ -25,6 +25,13 @@ export default function Register() {
 
   const { login } = useAuth();
 
+  // Password rules evaluation
+  const hasMinLength = formData.password.length >= 8;
+  const hasLowerCase = /[a-z]/.test(formData.password);
+  const hasUpperCase = /[A-Z]/.test(formData.password);
+  const hasSymbol = /[^a-zA-Z0-9]/.test(formData.password);
+  const isGmail = formData.email.trim().toLowerCase().endsWith('@gmail.com');
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -37,12 +44,24 @@ export default function Register() {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    // Strict Client-Side Checks
+    if (!isGmail) {
+      setError('Registration is restricted to @gmail.com accounts only. Please use your Gmail.');
+      return;
+    }
+
+    if (!hasMinLength || !hasLowerCase || !hasUpperCase || !hasSymbol) {
+      setError('Please meet all password requirements: 8+ characters, uppercase letter, lowercase letter, and special symbol.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const requestData = {
-        name: formData.name,
-        email: formData.email,
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
         password: formData.password,
         role: formData.role.toUpperCase()
       };
@@ -144,9 +163,12 @@ export default function Register() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-mono uppercase text-gray-400">
-              EMAIL ADDRESS
-            </label>
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-mono uppercase text-gray-400">
+                GMAIL ADDRESS ONLY
+              </label>
+              <span className="text-[10px] font-mono text-[#ccff00]">REQUIRED: @gmail.com</span>
+            </div>
             <div className="relative flex items-center">
               <div className="absolute left-3.5 flex items-center pointer-events-none text-gray-400">
                 <Mail size={16} />
@@ -154,18 +176,25 @@ export default function Register() {
               <input
                 type="email"
                 name="email"
-                placeholder="alex@example.com"
+                placeholder="username@gmail.com"
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="funky-input input-with-icon text-xs font-mono"
+                className={`funky-input input-with-icon text-xs font-mono ${
+                  formData.email && !isGmail ? 'border-red-500/60 focus:border-red-500' : ''
+                }`}
               />
             </div>
+            {formData.email && !isGmail && (
+              <p className="text-[10px] font-mono text-red-400 mt-1 flex items-center gap-1">
+                <AlertCircle size={11} /> Must end with @gmail.com
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">
             <label className="text-xs font-mono uppercase text-gray-400">
-              PASSWORD (MIN 6 CHARACTERS)
+              STRONG PASSWORD
             </label>
             <div className="relative flex items-center">
               <div className="absolute left-3.5 flex items-center pointer-events-none text-gray-400">
@@ -174,13 +203,37 @@ export default function Register() {
               <input
                 type="password"
                 name="password"
-                placeholder="••••••••"
+                placeholder="••••••••••••"
                 value={formData.password}
                 onChange={handleChange}
                 required
-                minLength={6}
                 className="funky-input input-with-icon text-xs font-mono"
               />
+            </div>
+
+            {/* Interactive Password Requirements Checklist */}
+            <div className="p-3 bg-white/5 border border-white/10 rounded-none space-y-1.5 mt-2">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mb-1">
+                Password Security Checklist:
+              </div>
+              <div className="grid grid-cols-2 gap-1 text-[11px] font-mono">
+                <div className={`flex items-center gap-1.5 ${hasMinLength ? 'text-[#ccff00]' : 'text-gray-500'}`}>
+                  {hasMinLength ? <Check size={12} /> : <X size={12} />}
+                  <span>8+ Characters</span>
+                </div>
+                <div className={`flex items-center gap-1.5 ${hasUpperCase ? 'text-[#ccff00]' : 'text-gray-500'}`}>
+                  {hasUpperCase ? <Check size={12} /> : <X size={12} />}
+                  <span>Uppercase (A-Z)</span>
+                </div>
+                <div className={`flex items-center gap-1.5 ${hasLowerCase ? 'text-[#ccff00]' : 'text-gray-500'}`}>
+                  {hasLowerCase ? <Check size={12} /> : <X size={12} />}
+                  <span>Lowercase (a-z)</span>
+                </div>
+                <div className={`flex items-center gap-1.5 ${hasSymbol ? 'text-[#ccff00]' : 'text-gray-500'}`}>
+                  {hasSymbol ? <Check size={12} /> : <X size={12} />}
+                  <span>Symbol (!@#$%^&*)</span>
+                </div>
+              </div>
             </div>
           </div>
 

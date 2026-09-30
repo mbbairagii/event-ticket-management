@@ -15,6 +15,8 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  const isGmail = formData.email.trim().toLowerCase().endsWith('@gmail.com');
+
   const handleChange = (e) => {
     setFormData(prev => ({
       ...prev,
@@ -25,10 +27,19 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!isGmail) {
+      setError('Access is restricted to @gmail.com accounts only. Please enter your registered Gmail.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const response = await loginUser(formData);
+      const response = await loginUser({
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password
+      });
       login(response.data);
 
       if (response.data.role === 'ADMIN' || response.data.role === 'ORGANIZER') {
@@ -65,7 +76,7 @@ export default function Login() {
             SIGN IN TO EVENTIFIED
           </h1>
           <p className="text-xs font-mono text-gray-400">
-            Access your passes or manage your hosted shows.
+            Sign in with your @gmail.com address to access your passes.
           </p>
         </div>
 
@@ -79,9 +90,12 @@ export default function Login() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
-            <label className="text-xs font-mono uppercase text-gray-400">
-              EMAIL ADDRESS
-            </label>
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-mono uppercase text-gray-400">
+                GMAIL ADDRESS
+              </label>
+              <span className="text-[10px] font-mono text-[#ccff00]">@gmail.com</span>
+            </div>
             <div className="relative flex items-center">
               <div className="absolute left-3.5 flex items-center pointer-events-none text-gray-400">
                 <Mail size={16} />
@@ -89,13 +103,20 @@ export default function Login() {
               <input
                 type="email"
                 name="email"
-                placeholder="name@example.com"
+                placeholder="name@gmail.com"
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="funky-input input-with-icon text-xs font-mono"
+                className={`funky-input input-with-icon text-xs font-mono ${
+                  formData.email && !isGmail ? 'border-red-500/60 focus:border-red-500' : ''
+                }`}
               />
             </div>
+            {formData.email && !isGmail && (
+              <p className="text-[10px] font-mono text-red-400 mt-1 flex items-center gap-1">
+                <AlertCircle size={11} /> Must end with @gmail.com
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">

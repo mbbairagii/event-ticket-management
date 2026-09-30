@@ -4,7 +4,11 @@
 A personal project showcasing a full‑stack event ticketing system built with a **microservices** architecture. Users can browse events, reserve seats, pay via Razorpay, and manage bookings.
 
 ## Tech Stack
+<<<<<<< HEAD
 - **Backend:** Java 17, Spring Boot, Spring Cloud (Eureka, API Gateway, OpenFeign)
+=======
+- **Backend:** Java 17, Spring Boot, Spring Cloud (Eureka, API Gateway, OpenFeign)
+>>>>>>> ea1606e (feat: implement tiered refund simulation, email/password validation, and fix gateway routing)
 - **Frontend:** React, Vite
 - **Database:** MySQL
 - **Build & Dependency Management:** Maven
